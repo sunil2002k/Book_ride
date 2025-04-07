@@ -27,10 +27,9 @@ const userSchema = new mongoose.Schema({
     minlength: [8, "Password must be at least 8 characters"],
   },
 
-//   socketId: {
-//     type: String,
-//     required: true,
-//   }, 
+  socketId: {
+    type: String,
+  }, 
 });
 
 userSchema.methods.generateAuthToken = function () {
