@@ -2,65 +2,58 @@ import axios from 'axios';
 import captainModel from '../models/captain.model.js';
 
 const getAddressCoordinates = async (address) => {
-    const API_KEY = process.env.GOOGLE_MAPS_API_KEY;const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${API_KEY}`;
-    try {
-        const response = await axios.get(url);
-        if (response.data.status === 'OK') {
-            const coordinates = response.data.results[0].geometry.location;
-            return { ltd: coordinates.lat, lng: coordinates.lng };
-        } else {
-            throw new Error('Unable to find address');
-        }
-    } catch (error) {
-        console.error('Error fetching address coordinates:', error);
-        throw error;
+    const apiKey = process.env.OPENCAGE_API_KEY; // Add your OpenCage API key to .env
+    const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json`, {
+        params: {
+            q: address,
+            key: apiKey,
+        },
+    });
+
+    if (response.data.results.length > 0) {
+        const { ltd, lng } = response.data.results[0].geometry;
+        return { ltd, lng };
+    } else {
+        throw new Error('Coordinates not found');
     }
-}
+};
 
 const getDistanceTime = async (origin, destination) => {
-    if(!origin || !destination) {
-        throw new Error('Origin and destination are required');
-    }
-    const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&key=${API_KEY}`;
-    try {
-        const response = await axios.get(url);
-        if (response.data.status === 'OK') {
-            if (response.data.rows[ 0 ].elements[ 0 ].status === 'ZERO_RESULTS') {
-                throw new Error('No routes found');
-            }
-
-            return response.data.rows[ 0 ].elements[ 0 ];
-        }  else {
-            throw new Error('Unable to find distance and time');
+    const apiKey = process.env.OPENROUTESERVICE_API_KEY; // Add your OpenRouteService API key to .env
+    const response = await axios.post(
+        `https://api.openrouteservice.org/v2/directions/driving-car`,
+        {
+            coordinates: [origin, destination],
+        },
+        {
+            headers: {
+                Authorization: apiKey,
+            },
         }
-    } catch (error) {
-        console.error('Error fetching distance and time:', error);
-        throw error;
-    }
-}
+    );
 
-const getAutoCompleteSuggestions =async (input) => {
-    if (!input) {
-        throw new Error('query is required');
-    }
+    const { distance, duration } = response.data.routes[0].summary;
+    return { distance, duration };
+};
 
-    const apiKey = process.env.GOOGLE_MAPS_API;
-    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${apiKey}`;
+const getAutoCompleteSuggestions = async (input) => {
+    const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
+        params: {
+            q: input,
+            format: 'json',
+            addressdetails: 1,
+            limit: 5,
+        },
+    });
 
-    try {
-        const response = await axios.get(url);
-        if (response.data.status === 'OK') {
-            return response.data.predictions.map(prediction => prediction.description).filter(value => value);
-        } else {
-            throw new Error('Unable to fetch suggestions');
-        }
-    } catch (err) {
-        console.error(err);
-        throw err;
-    }
-}
-
+    return response.data.map((item) => ({
+        name: item.display_name,
+        coordinates: {
+            ltd: parseFloat(item.lat),
+            lng: parseFloat(item.lon),
+        },
+    }));
+};
 const getCaptainsInTheRadius =  async (ltd, lng, radius) => {
 
     // radius in km

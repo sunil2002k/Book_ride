@@ -57,38 +57,52 @@ const Home = () => {
   });
 
   const handlePickupChange = async (e) => {
-    setPickup(e.target.value);
+    const input = e.target.value;
+    setPickup(input);
+  
+    if (input.length < 3) {
+      setPickupSuggestions([]); // Clear suggestions if input is too short
+      return;
+    }
+  
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_BASE_URL}/maps/get-suggestions`,
         {
-          params: { input: e.target.value },
+          params: { input },
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
       setPickupSuggestions(response.data);
-    } catch {
-      // handle error
+    } catch (error) {
+      console.error("Error fetching pickup suggestions:", error);
     }
   };
 
   const handleDestinationChange = async (e) => {
-    setDestination(e.target.value);
+    const input = e.target.value;
+    setDestination(input);
+  
+    if (input.length < 3) {
+      setDestinationSuggestions([]); // Clear suggestions if input is too short
+      return;
+    }
+  
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_BASE_URL}/maps/get-suggestions`,
         {
-          params: { input: e.target.value },
+          params: { input },
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
       setDestinationSuggestions(response.data);
-    } catch {
-      // handle error
+    } catch (error) {
+      console.error("Error fetching destination suggestions:", error);
     }
   };
 

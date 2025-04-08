@@ -1,30 +1,40 @@
-import React from 'react'
+import React from 'react';
 
-const LocationSearchPanel = ({ suggestions, setVehiclePanel, setPanelOpen, setPickup, setDestination, activeField }) => {
-
+const LocationSearchPanel = ({ suggestions, setPickup, setDestination, activeField }) => {
     const handleSuggestionClick = (suggestion) => {
-        if (activeField === 'pickup') {
-            setPickup(suggestion)
-        } else if (activeField === 'destination') {
-            setDestination(suggestion)
+        if (!suggestion || !suggestion.coordinates) {
+            console.error("Invalid suggestion object:", suggestion);
+            return;
         }
-        // setVehiclePanel(true)
-        // setPanelOpen(false)
-    }
+    
+        const { ltd, lng } = suggestion.coordinates;
+        const address = suggestion.name; // Assuming `name` contains the address
+        if (activeField === 'pickup') {
+            setPickup(address); // Use address instead of { ltd, lng }
+        } else if (activeField === 'destination') {
+            setDestination(address); // Use address instead of { ltd, lng }
+        }
+    };
 
     return (
         <div>
-            {/* Display fetched suggestions */}
-            {
-                suggestions.map((elem, idx) => (
-                    <div key={idx} onClick={() => handleSuggestionClick(elem)} className='flex gap-4 border-2 p-3 border-gray-50 active:border-black rounded-xl items-center my-2 justify-start'>
-                        <h2 className='bg-[#eee] h-8 flex items-center justify-center w-12 rounded-full'><i className="ri-map-pin-fill"></i></h2>
-                        <h4 className='font-medium'>{elem}</h4>
-                    </div>
-                ))
-            }
+            {suggestions.map((suggestion, idx) => (
+                <div
+                    key={idx}
+                    onClick={() => {
+                        if (suggestion.coordinates) {
+                            handleSuggestionClick(suggestion);
+                        } else {
+                            console.error("Suggestion missing coordinates:", suggestion);
+                        }
+                    }}
+                    className="p-2 border-b cursor-pointer"
+                >
+                    {suggestion.name || "Unknown Location"}
+                </div>
+            ))}
         </div>
-    )
-}
+    );
+};
 
-export default LocationSearchPanel
+export default LocationSearchPanel;
